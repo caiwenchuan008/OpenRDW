@@ -74,7 +74,7 @@ public class GlobalConfiguration : MonoBehaviour
 
     [Tooltip("Buffer width for triggering reset")]
     [SerializeField, Range(0f, 1f)]
-    public float RESET_TRIGGER_BUFFER = 0.5f;
+    public float RESET_TRIGGER_BUFFER = 0f;
 
     [HideInInspector]
     public float simulatedTime = 0;//accumulated simulation time, clear after each trial
@@ -187,7 +187,7 @@ public class GlobalConfiguration : MonoBehaviour
     public TrackingSpaceChoice trackingSpaceChoice;
 
     [Tooltip("Obstacle setting")]
-    [Range(0, 2)]
+    [Range(0, 3)]
     public int obstacleType;
 
     [Tooltip("The height of obstacle if if3dObstacle is true")]
@@ -237,7 +237,7 @@ public class GlobalConfiguration : MonoBehaviour
     public bool drawVirtualTrail;
 
     [Tooltip("Maximum distance requirement to trigger next waypoint")]
-    public float distanceToWaypointThreshold = 0.05f;
+    public float distanceToWaypointThreshold = 0.1f;
 
     [Tooltip("how long the visualization of the trail should be reserved, -1 indicate show permanently")]
     public int trailVisualTime;
@@ -314,10 +314,26 @@ public class GlobalConfiguration : MonoBehaviour
     {        
         startTimeOfProgram = Utilities.GetTimeString();
         statisticsLogger = GetComponent<StatisticsLogger>();
-
+        
         userInterfaceManager = GetComponent<UserInterfaceManager>();
         cameraVirtualTopForAllAvatars = transform.Find("Virtual Top View Cam For All Avatars").GetComponent<Camera>();                
-        virtualWorld = transform.Find("Virtual World").gameObject;
+        
+        //virtualWorld = transform.Find("Virtual World").gameObject;
+
+        // virtual world
+        List<Vector2> virtualWorldPoints = new List<Vector2>();
+        var virtual_width = 4 ;
+        virtualWorldPoints.Add(new Vector2(virtual_width,virtual_width));
+        virtualWorldPoints.Add(new Vector2(-virtual_width,virtual_width));
+        virtualWorldPoints.Add(new Vector2(-virtual_width,-virtual_width));
+        virtualWorldPoints.Add(new Vector2(virtual_width,-virtual_width));
+        var virtualWorldMesh = TrackingSpaceGenerator.GeneratePolygonMesh(virtualWorldPoints);
+        
+        virtualWorld= new GameObject("virtualWorld");        
+        virtualWorld.transform.SetParent(transform);
+        virtualWorld.AddComponent<MeshFilter>().mesh = virtualWorldMesh;
+        var planeMr = virtualWorld.AddComponent<MeshRenderer>();
+        planeMr.material = new Material(trackingSpacePlaneMat);
 
         if (movementController == MovementController.AutoPilot)
         {
@@ -354,6 +370,12 @@ public class GlobalConfiguration : MonoBehaviour
                 pathSeedChoiceToWaypoints[ps] = RandomRotateWaypoints(pathSeedChoiceToWaypoints[ps]);
             }
         }
+
+        // print("Awake virtualWorldVisible ");
+        // print(virtualWorldVisible);
+
+        // print("Awake trackingSpaceVisible ");
+        // print(trackingSpaceVisible);
 
         firstPersonViewOldChoice = firstPersonView;
         virtualWorldVisibleOldChoice = virtualWorldVisible;
@@ -396,6 +418,7 @@ public class GlobalConfiguration : MonoBehaviour
         //Load from command txt file
         if (loadFromTxt)
         {
+            //print("path: ");
             userInterfaceManager.GetCommandFilePaths();
             //generate experimentSetups according to command txt
             GenerateExperimentSetupsByCommandFiles();
@@ -426,12 +449,15 @@ public class GlobalConfiguration : MonoBehaviour
             }
         }
         else {
-            if (movementController == MovementController.Keyboard)
+            if (movementController == MovementController.Keyboard){
+                //print("MakeOneStepCycle");
+                //print(experimentInProgress);
                 MakeOneStepCycle();
-            else if (movementController == MovementController.HMD)
+            }else if (movementController == MovementController.HMD)
             {
                 //press R key to start logging
                 if (readyToStart)
+                    //print("MakeOneStepCycle");
                     MakeOneStepCycle();
             }
         }
@@ -928,7 +954,10 @@ public class GlobalConfiguration : MonoBehaviour
         {
             waypoints = pathSeedChoiceToWaypoints[pathSeedChoice];
             samplingIntervals = null;
-        }            
+        }
+        /*samplingIntervals = null;
+        waypoints = new List<Vector2>();
+        waypoints.Add(new Vector2(1,0));*/       
     }
     //load waypoints from txt
     public List<Vector2> LoadWaypointsFromFile(string path)
@@ -1032,6 +1061,8 @@ public class GlobalConfiguration : MonoBehaviour
         obstaclePolygons = setup.obstaclePolygons;
         obstacleType = setup.obstacleType;
 
+        //print("222 obstaclePolygons "+obstaclePolygons.Count);
+
         //get avatar configurations
         var avatarList = setup.avatars;
 
@@ -1107,6 +1138,12 @@ public class GlobalConfiguration : MonoBehaviour
 
         SwitchPersonView(firstPersonView);
 
+        print("start virtualWorldVisible ");
+        print(virtualWorldVisible);
+
+        print("start trackingSpaceVisible ");
+        print(trackingSpaceVisible);
+
         virtualWorld.SetActive(virtualWorldVisible);
 
         ChangeTrackingSpaceVisibility(trackingSpaceVisible);
@@ -1170,10 +1207,17 @@ public class GlobalConfiguration : MonoBehaviour
 
         var trackingSpaceMesh = TrackingSpaceGenerator.GeneratePolygonMesh(trackingSpacePoints);
 
+        foreach(var point in trackingSpacePoints){
+            print(point);
+        }        
+
         //visualize trackingSpace
         planeForAllAvatar.AddComponent<MeshFilter>().mesh = trackingSpaceMesh;
         var planeMr = planeForAllAvatar.AddComponent<MeshRenderer>();
         planeMr.material = new Material(trackingSpacePlaneMat);
+
+
+
 
 
         var obstacleParent = new GameObject().transform;
@@ -1255,9 +1299,18 @@ public class GlobalConfiguration : MonoBehaviour
                 {
                     var posReal = Utilities.FlattenedPos2D(redirectedAvatars[id].GetComponent<RedirectionManager>().currPosReal);
                     var dirReal = Utilities.FlattenedPos2D(redirectedAvatars[id].GetComponent<RedirectionManager>().currDirReal);
-                    var dist = (physicalTargetTransforms[id].position - posReal).magnitude;
+                    
+                    var dist = (physicalTargetTransforms[0].position - posReal).magnitude;
                     var angle = Vector2.Angle(physicalTargetTransforms[id].forward, dirReal);
                     //Debug.Log(string.Format("Ep = {0}, Ea", dist.ToString("f3"), angle.ToString("f3")));
+
+                    var dist1 = (physicalTargetTransforms[1].position - posReal).magnitude;
+                    if(dist1 < dist){
+                        dist = dist1;
+                    }
+                    // -3 -3
+                    //1: -2 2
+                    //2: 2 -2
                     statisticsLogger.Event_Update_PassiveHaptics_Results(id, dist, angle);
                 }
             }
@@ -1279,9 +1332,10 @@ public class GlobalConfiguration : MonoBehaviour
             statisticsLogger.GetExperimentResultsForSampledVariables(out oneDimensionalSamples, out twoDimensionalSamples);
             statisticsLogger.LogAllExperimentSamples(TrialIdToString(experimentIterator), oneDimensionalSamples, twoDimensionalSamples);
         }
-
+        print("exportImage1");
         //save images
         if (exportImage)
+            print("exportImage2");
             statisticsLogger.LogExperimentPathPictures(experimentIterator);
 
         //create temporary files to indicate the stage of the experiment
@@ -1334,7 +1388,8 @@ public class GlobalConfiguration : MonoBehaviour
     }
     
     public void GenerateTrackingSpace(int avatarNum, out List<Vector2> trackingSpacePoints, out List<List<Vector2>> obstaclePolygons, out List<InitialConfiguration> initialConfigurations)
-    {
+    {   
+        print("obstacleType: "+obstacleType);
         var defaultInitialConfiguration = new List<InitialConfiguration>();
         defaultInitialConfiguration.Add(InitialConfiguration.GetDefaultInitialConfiguration());
         obstaclePolygons = new List<List<Vector2>>();
@@ -1370,7 +1425,7 @@ public class GlobalConfiguration : MonoBehaviour
                 trackingSpacePoints = TrackingSpaceGenerator.GeneratePolygonTrackingSpacePoints(4);
                 break;
         }
-
+        //print("000 obstaclePolygons "+obstaclePolygons.Count);
         initialConfigurations = new List<InitialConfiguration>();
         for (int i = 0; i < avatarNum; i++)
             initialConfigurations.Add(InitialConfiguration.Copy(defaultInitialConfiguration[i % defaultInitialConfiguration.Count]));

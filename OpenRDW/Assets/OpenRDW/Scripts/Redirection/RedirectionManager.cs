@@ -65,6 +65,7 @@ public class RedirectionManager : MonoBehaviour {
     public float deltaDir;//horizontal angle change in degrees (positive if rotate clockwise)
     [HideInInspector]
     public Transform targetWaypoint;
+    public Transform targetWaypoint1;
 
     [HideInInspector]
     public bool inReset = false;
@@ -107,10 +108,12 @@ public class RedirectionManager : MonoBehaviour {
         if (globalConfiguration.movementController != GlobalConfiguration.MovementController.HMD)
         {
             headTransform = simulatedHead;
+            print("headTransform 1:");
+            print(headTransform.position);
         }
         else {
             //hide avatar body
-            //body.gameObject.SetActive(false);
+            body.gameObject.SetActive(false);
         }
 
 
@@ -247,6 +250,8 @@ public class RedirectionManager : MonoBehaviour {
         redirectionTime = 0;
         UpdatePreviousUserState();
         UpdateCurrentUserState();
+        //print("headTransform 2:");
+        //print(headTransform.position);
         inReset = false;
         ifJustEndReset = true;
     }
@@ -395,6 +400,7 @@ public class RedirectionManager : MonoBehaviour {
     void GetTargetWaypoint()
     {
         targetWaypoint = transform.Find("Target Waypoint").gameObject.transform;
+        targetWaypoint1 = transform.Find("Target Waypoint1").gameObject.transform;
     }
 
     public void UpdateCurrentUserState()

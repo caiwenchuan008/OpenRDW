@@ -802,7 +802,8 @@ public class StatisticsLogger : MonoBehaviour {
         }
         
         texRealPathGraph.Apply();
-        
+        print("exportImage3");
+        print(GRAPH_DERECTORY);
         //Export as png file
         Utilities.ExportTexture2dToPng(GRAPH_DERECTORY + string.Format("{0}_{1}_realPath.png", experimentSetupId, Utilities.GetTimeStringForFileName()), texRealPathGraph);        
 

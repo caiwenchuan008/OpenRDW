@@ -29,7 +29,7 @@ public class UserInterfaceManager : MonoBehaviour
         if (!globalConfiguration.multiCmdFiles)
         {
             if (Utilities.GetCommandFilePath(out string path))
-            {
+            {   
                 //load single command file
                 commandFiles.Add(path);
             }

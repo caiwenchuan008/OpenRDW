@@ -124,6 +124,7 @@ public class MovementManager : MonoBehaviour {
         //if waypoint visible
         if (redirectionManager.targetWaypoint != null)
             redirectionManager.targetWaypoint.GetComponent<MeshRenderer>().enabled = ifVisible;
+            redirectionManager.targetWaypoint1.GetComponent<MeshRenderer>().enabled = ifVisible;
 
         //if camera is working
         foreach (var cam in GetComponentsInChildren<Camera>())
@@ -149,36 +150,58 @@ public class MovementManager : MonoBehaviour {
     }
 
     void InstantiateSimulationPrefab()
-    {
+    {   
+        print("go InstantiateSimulationPrefab ...... ");
         if (redirectionManager.targetWaypoint != null) {
             Destroy(redirectionManager.targetWaypoint.gameObject);
         }
         Transform waypoint = GameObject.CreatePrimitive(PrimitiveType.Sphere).transform;
-        waypoint.gameObject.layer = LayerMask.NameToLayer("Waypoint");
+        waypoint.gameObject.layer = LayerMask.NameToLayer("Default");
         Destroy(waypoint.GetComponent<SphereCollider>());
         redirectionManager.targetWaypoint = waypoint;
         waypoint.name = "Simulated Waypoint";
         waypoint.position = 1.2f * Vector3.up + 1000 * Vector3.forward;
         waypoint.localScale = 0.3f * Vector3.one;
-        waypoint.GetComponent<Renderer>().material.color = new Color(0, 1, 0);
-        waypoint.GetComponent<Renderer>().material.SetColor("_EmissionColor", new Color(0, 0.12f, 0));
+        waypoint.GetComponent<Renderer>().material.color = new Color(0, 1, 1);
+        waypoint.GetComponent<Renderer>().material.SetColor("_EmissionColor", new Color(0, 0.12f, 0.12f));
+
+        if (redirectionManager.targetWaypoint1 != null) {
+            Destroy(redirectionManager.targetWaypoint1.gameObject);
+        }
+        Transform waypoint1 = GameObject.CreatePrimitive(PrimitiveType.Sphere).transform;
+        waypoint1.gameObject.layer = LayerMask.NameToLayer("Default");
+        Destroy(waypoint1.GetComponent<SphereCollider>());
+        redirectionManager.targetWaypoint1 = waypoint1;
+        waypoint1.name = "Simulated Waypoint";
+        waypoint1.position = 1.2f * Vector3.up + 1000 * Vector3.forward;
+        waypoint1.localScale = 0.3f * Vector3.one;
+        waypoint1.GetComponent<Renderer>().material.color = new Color(1, 0, 0);
+        waypoint1.GetComponent<Renderer>().material.SetColor("_EmissionColor", new Color(0, 0.12f, 0));
     }
 
 
     //get new waypoints
     public void InitializeWaypointsPattern() {
+        print("pathSeedChoice");
+        print(pathSeedChoice);
         generalManager.GenerateWaypoints(pathSeedChoice, waypointsFilePath, samplingIntervalsFilePath, out waypoints, out samplingIntervals);
+        print("waypoints");
+        print(waypoints[0]);
     }
 
     //check if need to update waypoint
     void UpdateSimulatedWaypointIfRequired()
-    {
+    {   
+        
         //experiment is not in progress
         if (!generalManager.experimentInProgress)
             return;
         
+
+        //print("checking update waypoint");
         if (pathSeedChoice == PathSeedChoice.RealUserPath)
         {
+            //print("checking update waypoint1");
             var redirectionTime = redirectionManager.redirectionTime;
             var samplingInterval = GetSamplingIntervalByWaypointIterator(waypointIterator);
             while (!ifMissionComplete && waypointIterator < waypoints.Count && redirectionTime > accumulatedWaypointTime + samplingInterval)
@@ -189,8 +212,15 @@ public class MovementManager : MonoBehaviour {
             }
         }
         else {
+
+            //print("currPos:");
+            //print(redirectionManager.currPos[0]+" "+redirectionManager.currPos[2]);
+            //print("targetPos:");
+            //print(redirectionManager.targetWaypoint.position[0]+" "+redirectionManager.targetWaypoint.position[2]);
+
             if ((redirectionManager.currPos - Utilities.FlattenedPos3D(redirectionManager.targetWaypoint.position)).magnitude < generalManager.distanceToWaypointThreshold)
-            {
+            {   
+                //print("update waypoint");
                 UpdateWaypoint();
             }
         }
@@ -345,7 +375,8 @@ public class MovementManager : MonoBehaviour {
         else
         {
             //auto simulation and keyboard controll mode, apply initial positions and directions
-            initialConfiguration = avatar.initialConfiguration;
+            initialConfiguration = new InitialConfiguration(new Vector2(0,0), new Vector2(-1,-1));
+            //initialConfiguration = avatar.initialConfiguration;
         }        
         
         InitializeBuffers();
@@ -366,9 +397,18 @@ public class MovementManager : MonoBehaviour {
 
         //Set priority, large priority call early
         redirectionManager.priority = this.avatarId;
-
+        
+        //print("waypoints");
+        //print(waypoints[0]);
+        //print(waypoints[1]);
         // Set First Waypoint Position and Enable It
-        redirectionManager.targetWaypoint.position = new Vector3(waypoints[0].x, redirectionManager.targetWaypoint.position.y, waypoints[0].y);
+        
+        //redirectionManager.targetWaypoint.position = new Vector3(waypoints[0].x, redirectionManager.targetWaypoint.position.y, waypoints[0].y);
+        //redirectionManager.targetWaypoint1.position = new Vector3(waypoints[1].x, redirectionManager.targetWaypoint1.position.y, waypoints[1].y);
+        
+        redirectionManager.targetWaypoint.position = new Vector3(-3, redirectionManager.targetWaypoint.position.y, -3);
+        //redirectionManager.targetWaypoint1.position = new Vector3(15, redirectionManager.targetWaypoint1.position.y, 15);
+        
         waypointIterator = 0;
         accumulatedWaypointTime = 0;
 
@@ -381,8 +421,10 @@ public class MovementManager : MonoBehaviour {
 
         // Setup Trail Drawing
         redirectionManager.trailDrawer.enabled = true;
+
         // Enable Waypoint
         redirectionManager.targetWaypoint.gameObject.SetActive(true);
+        redirectionManager.targetWaypoint1.gameObject.SetActive(false);
 
         // Resetting User and World Positions and Orientations
         transform.position = Vector3.zero;
@@ -417,7 +459,8 @@ public class MovementManager : MonoBehaviour {
         obstacleParent.rotation = this.obstacleParent.rotation;
         Destroy(this.obstacleParent.gameObject);
         this.obstacleParent = obstacleParent;
-
+        
+        //print("obstaclePolygons "+obstaclePolygons);
         TrackingSpaceGenerator.GenerateObstacleMesh(obstaclePolygons, obstacleParent, generalManager.obstacleColor, generalManager.if3dObstacle, generalManager.obstacleHeight);
 
         //buffer mesh

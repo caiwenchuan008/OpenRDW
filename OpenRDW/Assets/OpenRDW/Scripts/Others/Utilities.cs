@@ -128,6 +128,7 @@ public static class Utilities
         {
             if (File.Exists(ofn.file))
             {
+                Debug.Log("path: "+ofn.file);
                 path = ofn.file;
                 return true;
             }

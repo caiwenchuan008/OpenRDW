@@ -2,10 +2,10 @@
   "source": "Unity",
   "applications": [
     {
-      "app_key": "application.generated.unity.rdwtoolkit.exe",
+      "app_key": "application.generated.unity.openrdw.exe",
       "launch_type": "url",
       "url": "steam://launch/",
-      "action_manifest_path": "E:\\Labwork\\RDWT\\RDWToolkit - UploadVersion\\Assets\\StreamingAssets\\SteamVR\\actions.json",
+      "action_manifest_path": "D:\\caiwenchuan_github\\OpenRDW\\OpenRDW\\Assets\\StreamingAssets\\SteamVR\\actions.json",
       "strings": {
         "en_us": {
           "name": "OpenRDW [Testing]"

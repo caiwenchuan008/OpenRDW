@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 
-public class TrackingSpaceGenerator
+public class TrackingSpaceGenerator : MonoBehaviour
 {
     private const float DEFAULT_TRACKING_SPACE_RADIUS = 5;//default physical tracking space radius
     private const float DEFAULT_TRAPEZOID_W1 = 10;//trapzoid left length
@@ -60,7 +60,7 @@ public class TrackingSpaceGenerator
             {
                 initialConfigurations.Add(new InitialConfiguration(new Vector2(x, y), new Vector2(-x, -y).normalized));
             }
-
+        
         switch (obstacleType) {
             case 0:
                 break;
@@ -71,6 +71,7 @@ public class TrackingSpaceGenerator
                     new Vector2(-3,-3),
                     new Vector2(3,-3),
                 });
+
                 break;
             case 2:
                 obstaclePolygons.Add(new List<Vector2> {
@@ -97,6 +98,7 @@ public class TrackingSpaceGenerator
                     new Vector2(5,-5),
                     new Vector2(5,-3),
                 });
+                Debug.Log("--- obstaclePolygons:"+obstaclePolygons.Count);
                 initialConfigurations = new List<InitialConfiguration>();
                 foreach (var p in new Vector2[] { new Vector2(0, height / 2 - distToWall), new Vector2(0, -height / 2 + distToWall),
                     new Vector2(-width / 2 + distToWall, 0), new Vector2(width / 2 - distToWall, 0) })
@@ -104,8 +106,17 @@ public class TrackingSpaceGenerator
                     initialConfigurations.Add(new InitialConfiguration(p, -p.normalized));
                 }
                 break;
+            case 3:
+                obstaclePolygons.Add(new List<Vector2> {
+                    new Vector2(3,3),
+                    new Vector2(-3,3),
+                    new Vector2(-3,-3),
+                    new Vector2(3,-3),
+                });
+                break;
             default:
                 break;
+            
         }
     }
 
@@ -764,6 +775,7 @@ public class TrackingSpaceGenerator
         int obstacleId = 0;
         foreach (var obstaclePoints in obstaclePolygons)
         {
+            //print("@@");
             var obstacleMesh = GeneratePolygonMesh(obstaclePoints);
             var obstacle = new GameObject("obstacleId" + obstacleId);
             obstacle.transform.SetParent(obstacleParent);
